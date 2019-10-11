@@ -3,21 +3,18 @@
 
 :- dynamic(known/2).
 
-open_notify_url("http://mwapi.herokuapp.com/habilitations").
-
 %! iss_data(-Data) is det.
 %  get JSON ISS location data from open notify api and read in as dict
-iss_data(Data) :-
-    open_notify_url(URL),
+iss_data(Data, URL) :-
     setup_call_cleanup(
         http_open(URL, In, [request_header('Accept'='application/json')]),
         json_read_dict(In, Data),
         close(In)
     ).
 
-cached_iss_data(Data) :-
+cached_iss_data(Data, URL) :-
     known(data, Data) ;
-    iss_data(Data),
+    iss_data(Data, URL),
     assert(known(data, Data)).
 
 % walk_list([], _ ).
@@ -54,15 +51,42 @@ get_discipline([H | T]) :-
 
 get_code_name([H, B | _]) :-
     writeln(H),
+    get_discipline_json(H),
     writeln(B).
 
-% :- dynamic getElements/2.
+get_discipline_json(Code) :-
+    string_chars(URL, "http://mwapi.herokuapp.com/discipline/"),
+    string_concat(URL, Code, FINALURL),
+    writeln(FINALURL),
+    % cached_iss_data(Data, FINALURL),
+    iss_data(Data, FINALURL),
+    get_discipline_data(Data).
+    % iss_data(Data, FINALURL),
+    % write(Data).
 
-getElements() :- 
-    cached_iss_data(Data),
+get_discipline_requirements([H | _]) :-
+    Requirements = H.get(requirements),
+    % writeln(Requirements),
+    get_requirement(Requirements).
+
+get_discipline_data(Data) :-
+    get_discipline_requirements(Data).
+    % Requirements = Data.get(requirements),
+    % get_requirement(Requirements).
+
+get_requirement([]).
+get_requirement([H | T]) :-
+    writeln(H),
+    get_requirement(T).
+
+% :- dynamic get_elements/2.
+
+get_elements() :-
+    % cached_iss_data(Data, "http://mwapi.herokuapp.com/habilitations"),
+    iss_data(Data, "http://mwapi.herokuapp.com/habilitations"),
     get_habilitation(Data).
 
-% getElements(H, Discipline) :- 
+% get_elements(H, Discipline) :- 
 %     cached_iss_data(Data),
 %     walk_list(Data, H),
 %     get_informations(H, Discipline).
