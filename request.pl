@@ -1,7 +1,7 @@
 :- use_module(library(http/json)).
 :- use_module(library(http/http_open)).
 
-:- dynamic(known/2).
+% :- dynamic(known/2).
 
 %! iss_data(-Data) is det.
 %  get JSON ISS location data from open notify api and read in as dict
@@ -12,10 +12,10 @@ iss_data(Data, URL) :-
         close(In)
     ).
 
-cached_iss_data(Data, URL) :-
-    known(data, Data) ;
-    iss_data(Data, URL),
-    assert(known(data, Data)).
+% cached_iss_data(Data, URL) :-
+%     known(data, Data) ;
+%     iss_data(Data, URL),
+%     assert(known(data, Data)).
 
 % walk_list([], _ ).
 % walk_list([H | T], H) :- walk_list([], T).
@@ -57,13 +57,14 @@ get_code_name([H, B | _]) :-
 get_discipline_json(Code) :-
     string_chars(URL, "http://mwapi.herokuapp.com/discipline/"),
     string_concat(URL, Code, FINALURL),
-    writeln(FINALURL),
+    % writeln(FINALURL),
     % cached_iss_data(Data, FINALURL),
     iss_data(Data, FINALURL),
     get_discipline_data(Data).
     % iss_data(Data, FINALURL),
     % write(Data).
 
+get_discipline_requirements([]).
 get_discipline_requirements([H | _]) :-
     Requirements = H.get(requirements),
     % writeln(Requirements),
@@ -81,9 +82,12 @@ get_requirement([H | T]) :-
 
 % :- dynamic get_elements/2.
 
-get_elements() :-
+get_elements(Code) :-
     % cached_iss_data(Data, "http://mwapi.herokuapp.com/habilitations"),
-    iss_data(Data, "http://mwapi.herokuapp.com/habilitations"),
+    % iss_data(Data, "http://mwapi.herokuapp.com/habilitations"),
+    string_chars(URL, "http://mwapi.herokuapp.com/habilitation/"),
+    string_concat(URL, Code, FINALURL),
+    iss_data(Data, FINALURL),
     get_habilitation(Data).
 
 % get_elements(H, Discipline) :- 
