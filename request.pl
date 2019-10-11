@@ -15,21 +15,54 @@ iss_data(Data) :-
         close(In)
     ).
 
-walk_list([], _ ).
-walk_list([H | T], H) :- walk_list([], T).
-
 cached_iss_data(Data) :-
     known(data, Data) ;
     iss_data(Data),
     assert(known(data, Data)).
 
-get_informations(H, Discipline) :-
-    Discipline = H.get(disciplines).
+% walk_list([], _ ).
+% walk_list([H | T], H) :- walk_list([], T).
 
-:- dynamic getElements/2.
+get_habilitation([]).
+get_habilitation([H | T]) :-
+    get_informations(H),
+    get_habilitation(T).
 
-getElements(H, Discipline) :- 
+% get_habilitation([H | _]) :-
+%     get_informations(H).
+
+get_informations(H) :-
+    Disciplines = H.get(disciplines),
+    Name = H.get(name),
+    Code = H.get(code),
+    % write(Disciplines),
+    writeln(Code),
+    writeln(Name),
+    get_period(Disciplines).
+
+get_period([]).
+get_period([H | T]) :-
+    % write(H),
+    get_discipline(H),
+    get_period(T).
+
+get_discipline([]).
+get_discipline([H | T]) :-
+    % write(H),
+    get_code_name(H),
+    get_discipline(T).
+
+get_code_name([H, B | _]) :-
+    writeln(H),
+    writeln(B).
+
+% :- dynamic getElements/2.
+
+getElements() :- 
     cached_iss_data(Data),
-    walk_list(Data, H),
-    get_informations(H, Discipline).
+    get_habilitation(Data).
 
+% getElements(H, Discipline) :- 
+%     cached_iss_data(Data),
+%     walk_list(Data, H),
+%     get_informations(H, Discipline).
