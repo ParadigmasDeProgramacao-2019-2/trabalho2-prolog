@@ -1,5 +1,10 @@
 :- use_module(library(http/json)).
 :- use_module(library(http/http_open)).
+:- use_module(library(lists)).
+
+:- dynamic(habilitation_name/2).
+:- dynamic(discipline_name/2).
+:- dynamic(requirements/2).
 
 % :- dynamic(known/2).
 
@@ -32,6 +37,9 @@ get_informations(H) :-
     Disciplines = H.get(disciplines),
     Name = H.get(name),
     Code = H.get(code),
+
+    assertz(habilitation_name(Code, Name)),
+
     % write(Disciplines),
     writeln(Code),
     writeln(Name),
@@ -50,9 +58,10 @@ get_discipline([H | T]) :-
     get_discipline(T).
 
 get_code_name([H, B | _]) :-
-    writeln(H),
-    get_discipline_json(H),
-    writeln(B).
+    assertz(discipline_name(H, B)),
+    % writeln(H),
+    get_discipline_json(H).
+    % writeln(B).
 
 get_discipline_json(Code) :-
     string_chars(URL, "http://mwapi.herokuapp.com/discipline/"),
@@ -60,26 +69,36 @@ get_discipline_json(Code) :-
     % writeln(FINALURL),
     % cached_iss_data(Data, FINALURL),
     iss_data(Data, FINALURL),
-    get_discipline_data(Data).
+    get_discipline_requirements(Data, Code).
     % iss_data(Data, FINALURL),
     % write(Data).
+    
+% get_discipline_data(Data, Code) :-
+%     get_discipline_requirements(Data, Code).
+%     % Requirements = Data.get(requirements),
+%     % get_requirement(Requirements).
 
-get_discipline_requirements([]).
-get_discipline_requirements([H | _]) :-
+get_discipline_requirements([], Code) :-
+    assertz(requirements(Code, [])).
+
+get_discipline_requirements([H | _], Code) :-
     Requirements = H.get(requirements),
     % writeln(Requirements),
-    get_requirement(Requirements).
+    set_requirement(Requirements, Code).
 
-get_discipline_data(Data) :-
-    get_discipline_requirements(Data).
-    % Requirements = Data.get(requirements),
-    % get_requirement(Requirements).
+set_requirement([], _).
 
-get_requirement([]).
-get_requirement([H | T]) :-
-    writeln(H),
-    get_requirement(T).
+set_requirement([H | T], Code) :-
+    assertz(requirements(Code, H)),
+    writeln(Code),
+    set_requirement(T, Code).
+% get_requirement([], _, _).
 
+% get_requirement([H | T], List, Result) :-
+%     append(List, [H]),
+%     Result = List,
+%     get_requirement(T, List, Result).
+    
 % :- dynamic get_elements/2.
 
 get_elements(Code) :-
