@@ -6,6 +6,9 @@
 :- dynamic(discipline_name/2).
 :- dynamic(requirements/2).
 
+is_requirement(Requirement, Code) :- requirements(Code, Requirement).
+% TODO tratar requisitos q têm mais de um elemento
+
 % :- dynamic(known/2).
 
 %! iss_data(-Data) is det.
@@ -83,14 +86,16 @@ get_discipline_requirements([], Code) :-
 
 get_discipline_requirements([H | _], Code) :-
     Requirements = H.get(requirements),
+    writeln(Code),
+    % writeln(Requirements),
     % writeln(Requirements),
     set_requirement(Requirements, Code).
 
 set_requirement([], _).
 
 set_requirement([H | T], Code) :-
-    assertz(requirements(Code, H)),
-    writeln(Code),
+    assertz(requirements(Code, [H])),
+    writeln([H]),
     set_requirement(T, Code).
 % get_requirement([], _, _).
 
