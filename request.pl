@@ -62,9 +62,9 @@ get_discipline([H | T]) :-
 
 get_code_name([H, B | _]) :-
     assertz(discipline_name(H, B)),
-    % writeln(H),
+    % writeln(H), % codigo
+    writeln(B),
     get_discipline_json(H).
-    % writeln(B).
 
 get_discipline_json(Code) :-
     string_chars(URL, "http://mwapi.herokuapp.com/discipline/"),
@@ -92,13 +92,13 @@ get_discipline_requirements([H | _], Code) :-
     set_requirement(Requirements, Code).
 
 set_requirement([], _).
-
 set_requirement([H | T], Code) :-
-    assertz(requirements(Code, [H])),
-    writeln([H]),
+    % assertz(requirements(Code, [H])),
+    % writeln([H]),
+    get_format_requirements_in_list(H, Code),
     set_requirement(T, Code).
-% get_requirement([], _, _).
 
+% get_requirement([], _, _).
 % get_requirement([H | T], List, Result) :-
 %     append(List, [H]),
 %     Result = List,
@@ -118,3 +118,14 @@ get_elements(Code) :-
 %     cached_iss_data(Data),
 %     walk_list(Data, H),
 %     get_informations(H, Discipline).
+
+printa_lista([]).
+printa_lista([H | T]) :-
+    writeln(H),
+    printa_lista(T).
+
+get_format_requirements_in_list(Requirements, Code) :-
+    atomic_list_concat(ListRequirements, ",", Requirements),
+    % printa_lista(L),
+    assertz(requirements(Code, ListRequirements)),
+    writeln(ListRequirements).
