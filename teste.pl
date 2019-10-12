@@ -1,53 +1,55 @@
-:- dynamic disciplina/2.
+:- dynamic discipline/2.
 
 % Fatos
-disciplina(0,44).
-disciplina(44,55).
-disciplina(55,92).
-disciplina(188,92).
-disciplina(92, 88).
-disciplina(88, 73).
-disciplina(73,132).
-disciplina(0,188).
-disciplina(188, 82).
+discipline(0,44).
+discipline(44,55).
+discipline(55,92).
+discipline(92, 88).
+discipline(88, 73).
+discipline(73,132).
+discipline(0,188).
+discipline(188, 82).
+discipline(82, 78).
+discipline(78, 203).
 
-% %  pegar todos os requisitos da materia atual
-% pegar_req(Pre, Cod) :- 
-%     disciplina(Pre, Cod).
-% pegar_req(Prepre, Cod) :- 
-%     disciplina(Pre, Cod),
-%     pegar_req(Prepre, Pre).
+forget(X):-
+    forgetAux(X), fail.
 
-% find_update_req(Cod) :-
-    %disciplina( Cod, _ ).
-    %esquece(disciplina( _ , Cod )).
-    % memoriza(disciplina( 0, Prox )).
-
-esquece(X):-
-    esqueceAux(X), fail.
-
-esqueceAux(X):-
+forgetAux(X):-
     retract(X).
     
 % memoriza(X):-
-%     esquece(X), assert(X).
+%     forget(X), assert(X).
 %memoriza(X):-
     %assertz(X).
 
 get_next(Cod):-
-    disciplina(Cod, Prox),
-    assertz(disciplina(0, Prox)),
-    esqueceAux(disciplina(Cod, Prox)).
+    discipline(Cod, Prox),
+    write(Prox),
+    write(" --> "),
+    assertz(discipline(0, Prox)),
+    forgetAux(discipline(Cod, Prox)).
 
-search_no_req(Cod) :-
-    disciplina(0, Cod),
-    writeln(Cod),
-    retract(disciplina(0, Cod)),
-    get_next(Cod).
+search_no_req :-
+    discipline(0, Cod),
+    retract(discipline(0, Cod)),
+    get_next(Cod),
+    search_no_req.
 
+print_no_req :-
+    findall(Cod, discipline(0, Cod), Values),
+    print_list(Values).
+    
+print_list([]).
+print_list([H|T]) :- write(H), write(" --> "), print_list(T).
 
-search_pre_req(Cod) :-
-    disciplina(Pre, Cod),
-    write(Cod),
-    write(" -> "),
-    search_pre_req(Pre).
+start_topsort :- 
+    print_no_req,
+    search_no_req. 
+
+% search_pre_req(Cod) :-
+%     discipline(Pre, Cod),
+%     write(Cod),
+%     write(" -> "),
+%     search_pre_req(Pre).
+
