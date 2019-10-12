@@ -39,8 +39,8 @@ get_habilitation([H | T]) :-
 get_informations(H) :-
     Disciplines = H.get(disciplines),
     Name = H.get(name),
-    Code = H.get(code),
-
+    CodeStr = H.get(code),
+    atom_number(CodeStr, Code),
     assertz(habilitation_name(Code, Name)),
 
     % write(Disciplines),
@@ -61,10 +61,11 @@ get_discipline([H | T]) :-
     get_discipline(T).
 
 get_code_name([H, B | _]) :-
-    assertz(discipline_name(H, B)),
+    atom_number(H, Code),
+    assertz(discipline_name(Code, B)),
     % writeln(H), % codigo
     writeln(B),
-    get_discipline_json(H).
+    get_discipline_json(Code).
 
 get_discipline_json(Code) :-
     string_chars(URL, "http://mwapi.herokuapp.com/discipline/"),
@@ -121,11 +122,21 @@ get_elements(Code) :-
 
 printa_lista([]).
 printa_lista([H | T]) :-
-    writeln(H),
+    % writeln(H),
+    atom_number(H, H),
     printa_lista(T).
 
 get_format_requirements_in_list(Requirements, Code) :-
     atomic_list_concat(ListRequirements, ",", Requirements),
-    % printa_lista(L),
-    assertz(requirements(Code, ListRequirements)),
-    writeln(ListRequirements).
+    converter(ListRequirements, Filtered),
+    assertz(requirements(Code, Filtered)),
+    writeln(Filtered).
+
+converter(H,Result) :-
+    converter_aux(H, [], Result).
+converter_aux([], Acc, Result) :-
+    Result = Acc.
+converter_aux([H | T], Acc, Result) :-
+    atom_number(H, L),
+    append(Acc, [L], NewAcc),
+    converter_aux(T, NewAcc, Result).
