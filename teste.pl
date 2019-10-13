@@ -58,7 +58,8 @@ menu:- nl,nl,
     write('\e[2J'),  % clear screen
     tab(1), writeln('Opções:'),
     tab(1),writeln('1) Ordenação topologica: '),
-    tab(1),writeln('2) Sair '),
+    tab(1),writeln('2) Verificar matérias que posso cursar '),
+    tab(1),writeln('3) Sair '),
     read(Choice),
     (   
         Choice == 1 ->
@@ -70,6 +71,14 @@ menu:- nl,nl,
             write('\e[2J')
         ;
             Choice == 2 ->
+            writeln("Disciplinas que você possui o pré-requisito:"),
+            get_possible_disc_with_rec,
+            nl,nl,
+            writeln("Disciplinas sem pré requisito:"),
+            get_possible_disc
+        ;
+
+            Choice == 3 ->
             fail
         ;
             writeln('OPÇÃO INVALIDA, DIGITE NOVAMENTE!!!'),
@@ -114,3 +123,21 @@ print_list([H|T]) :- write(H), write(" --> "), print_list(T).
 start_topsort :- 
     print_topord;
     true. 
+
+get_possible_disc :-
+    discipline(0, Disc),
+    \+ made_dis(Disc),
+    write(Disc),
+    write(" --> "),
+    fail;
+    write("").
+
+
+get_possible_disc_with_rec :-
+    made_dis(Disc),
+    discipline(Disc, Cod),
+    \+ made_dis(Cod),
+    write(Cod),
+    write(" --> "),
+    fail;
+    write("").
