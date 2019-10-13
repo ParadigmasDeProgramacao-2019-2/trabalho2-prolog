@@ -3,12 +3,17 @@
 
 :- use_module(library(http/http_json)).
 :- use_module(library(http/json_convert)).
+:- use_module(library(http/http_cors)).
 
 :- http_handler(root(.),handle,[]).
+
+:- set_setting(http:cors, [*]).
 
 :- dynamic json_discipline/1.
 :- dynamic ord_disc/1.
 :- dynamic discipline/2.
+
+:- use_module(library(http/http_parameters)).
 
 load_facts :-
     assertz(discipline(0,44)),
@@ -56,16 +61,30 @@ transform_to_json_top_order(JSON) :-
     json_convert:prolog_to_json(topological_ord(Cod), JSON).
 
 handle(Request) :-
-   format(user_output,"Connected!~n",[]),
-   http_read_json(Request, DictIn,[json_object(term)]),
+    cors_enable(Request,
+                [ methods([get,post,delete])
+                ]), 
+    % http_read_json(Request, DictIn,json_object(term)),
+    % write(DictIn),
    format(user_output,"Request is: ~p~n",[Request]),
-   format(user_output,"DictIn is: ~p~n",[DictIn]),
+   http_parameters(Request,
+                        [ habilitation(Habilitation, []) % parameter to get habilitation
+                        ]
+    ),
+   format(user_output,"Habilitation is: ~p~n",[Habilitation]),
    start_topsort,
    read_jsons_toporder(Ordtop),
    load_facts,
    read_jsons(Disciplines),
    json_convert:prolog_to_json(final_json(Ordtop, Disciplines), JSON),
    reply_json(JSON).
+
+% handle(Request) :-
+%     cors_enable(Request,
+%                 [ methods([get,post,delete])
+%                 ]),
+%     format(user_output,"Request is: ~p~n",[Request]),
+%     reply_json(test{x: 1, y: 2}). 
 
 % Topological order
 
