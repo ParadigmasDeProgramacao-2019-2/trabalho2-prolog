@@ -58,8 +58,9 @@ menu:- nl,nl,
     write('\e[2J'),  % clear screen
     tab(1), writeln('Opções:'),
     tab(1),writeln('1) Ordenação topologica: '),
-    tab(1),writeln('2) Verificar matérias que posso cursar '),
-    tab(1),writeln('3) Sair '),
+    tab(1),writeln('2) Verificar todas matérias que posso cursar '),
+    tab(1),writeln('3) Verificar se posso cursar matéria '),
+    tab(1),writeln('4) Sair '),
     read(Choice),
     (   
         Choice == 1 ->
@@ -72,13 +73,23 @@ menu:- nl,nl,
         ;
             Choice == 2 ->
             writeln("Disciplinas que você possui o pré-requisito:"),
-            get_possible_disc_with_rec,
+            get_possible_disc_with_req,
             nl,nl,
             writeln("Disciplinas sem pré requisito:"),
             get_possible_disc
         ;
-
             Choice == 3 ->
+            nl,nl,
+            read(Cod),
+            (
+                verify_discipline(Cod);
+                verify_discipline_with_req(Cod);
+                writeln("Você não possui o pré requisito para cursar a disciplina ou você já a cursou.")
+            ),
+            nl
+        ;
+
+            Choice == 4 ->
             fail
         ;
             writeln('OPÇÃO INVALIDA, DIGITE NOVAMENTE!!!'),
@@ -132,8 +143,7 @@ get_possible_disc :-
     fail;
     write("").
 
-
-get_possible_disc_with_rec :-
+get_possible_disc_with_req :-
     made_dis(Disc),
     discipline(Disc, Cod),
     \+ made_dis(Cod),
@@ -141,3 +151,14 @@ get_possible_disc_with_rec :-
     write(" --> "),
     fail;
     write("").
+
+verify_discipline(Disc) :-
+    discipline(0, Disc),
+    \+ made_dis(Disc),
+    writeln("Disciplina sem pré requisitos, é possível cursar.").
+
+verify_discipline_with_req(Disc) :-
+    \+ made_dis(Disc),
+    discipline(Cod, Disc),
+    made_dis(Cod),
+    writeln("Você possui o pré requisito para cursar a disciplina.").
