@@ -6,8 +6,10 @@
 :- dynamic(discipline_name/2).
 :- dynamic(requirements/2).
 
-is_requirement(Requirement, Code) :- requirements(Code, Requirement).
-% TODO tratar requisitos q têm mais de um elemento
+is_requirement([], _) :- fail, !.
+is_requirement([H | T], Code) :- writeln(H), 
+                                requirements(Code, H);
+                               is_requirement(T, Code), !.
 
 % :- dynamic(known/2).
 
@@ -132,7 +134,7 @@ get_format_requirements_in_list(Requirements, Code) :-
     assertz(requirements(Code, Filtered)),
     writeln(Filtered).
 
-converter(H,Result) :-
+converter(H, Result) :-
     converter_aux(H, [], Result).
 converter_aux([], Acc, Result) :-
     Result = Acc.
