@@ -6,7 +6,7 @@ import axios from 'axios';
 export default class DrawGraph extends Component {
 
   state = {
-    topological: [],
+    names: [],
     disciplines: [],
     graph: {nodes: [], edges: []},
   }
@@ -24,7 +24,7 @@ export default class DrawGraph extends Component {
         console.log(response.data);
 
         this.setState({
-          topological: response.data.topological,
+          names: response.data.name,
           disciplines: response.data.disciplines
         });
 
@@ -33,23 +33,38 @@ export default class DrawGraph extends Component {
         console.log(this.state);
   }
 
+  searchName = (code) => {
+    let name = '';
+
+    this.state.names.forEach(item => {
+      if(item.code === code){
+        name = item.name;
+      }
+    });
+
+    return name;
+  }
+
   renderNodes = () => {
     let aux_vector = [];
     let nodes = [];
     let edges = [];
 
     this.state.disciplines.forEach(item => {
-        if(aux_vector.indexOf(item.pre) === -1){
+
+        if(item.pre !== 0 && aux_vector.indexOf(item.pre) === -1 ){
           aux_vector.push(item.pre); 
-          nodes.push({ id: item.pre , label: `${item.pre}`});
+          nodes.push({ id: item.pre , label: this.searchName(item.pre)});
         }
 
-        if(aux_vector.indexOf(item.actual) === -1){
+        if(aux_vector.indexOf(item.actual) === -1 ){
           aux_vector.push(item.actual); 
-          nodes.push({ id: item.actual , label: `${item.actual}`});
+          nodes.push({ id: item.actual , label: this.searchName(item.actual)});
         }
 
-        edges.push({from: item.pre, to: item.actual});
+        if(item.pre !== 0){
+          edges.push({from: item.pre, to: item.actual});
+        }
     });
 
     console.log(nodes);

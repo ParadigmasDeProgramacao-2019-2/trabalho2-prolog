@@ -229,7 +229,7 @@ menu:- nl,nl,
     menu.
 
 sign_made_disc :- 
-    nl,nl,tab(15), write('MWCosultas'),nl,nl,
+    nl,nl,tab(15), write('MWConsulta'),nl,nl,
     verify_answer('Deseja cadastrar disciplina cursada? (y/n) ', sign_new_discipline, sign_made_disc);
     true. 
 
@@ -412,8 +412,9 @@ forget_old_topord :-
 
 :- json_object
     my_json(pre:integer, actual:integer),
-    final_json(disciplines: list),
-    topological_ord(discipline: integer).    
+    final_json(disciplines: list, name: list),
+    topological_ord(discipline: integer),
+    json_disc_name(code: integer, name: string).    
 
 read_jsons(Itens) :-
     findall(JSON , transform_to_json(JSON), Itens).
@@ -429,6 +430,13 @@ transform_to_json_top_order(JSON) :-
     ord_disc(Cod),
     json_convert:prolog_to_json(topological_ord(Cod), JSON).
 
+read_jsons_name_disc(Itens) :-
+    findall(JSON , transform_to_json_name_disc(JSON), Itens).
+
+transform_to_json_name_disc(JSON) :- 
+    discipline_name(Cod, Name),
+    json_convert:prolog_to_json(json_disc_name(Cod, Name), JSON).
+
 handle(Request) :-
     cors_enable(Request,
                 [ methods([get,post,delete])
@@ -438,11 +446,13 @@ handle(Request) :-
 %                         [ habilitation(Habilitation, []) % parameter to get habilitation
 %                         ]
 %     ),
-%    format(user_output,"Habilitation is: ~p~n",[Habilitation]),
+    %get_all_data_from_habilitation(Habilitation),
+    %format(user_output,"Habilitation is: ~p~n",[Habilitation]),
    %start_topsort,
    %read_jsons_toporder(Ordtop),
    read_jsons(Disciplines),
-   json_convert:prolog_to_json(final_json( Disciplines), JSON),
+   read_jsons_name_disc(Names),
+   json_convert:prolog_to_json(final_json( Disciplines, Names), JSON),
    reply_json(JSON).
 
 initialize_server :-
