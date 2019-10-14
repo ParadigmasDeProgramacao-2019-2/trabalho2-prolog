@@ -43,19 +43,20 @@ get_informations(H) :-
     % write(Disciplines),
     % writeln(Code),
     % writeln(Name),
-    get_period(Disciplines).
+    get_period(Disciplines, Code).
 
-get_period([]).
-get_period([H | T]) :-
+get_period([], _).
+get_period([H | T], HabilitationCode) :-
     % write(H),
-    get_discipline(H),
-    get_period(T).
+    get_discipline(H, HabilitationCode),
+    get_period(T, HabilitationCode).
 
-get_discipline([]).
-get_discipline([H | T]) :-
+get_discipline([], _).
+get_discipline([H | T], HabilitationCode) :-
     % write(H),
     get_code_name(H),
-    get_discipline(T).
+    assertz(habilitation_discipline(HabilitationCode, H)),
+    get_discipline(T, HabilitationCode).
 
 get_code_name([H, B | _]) :-
     atom_number(H, Code),
@@ -99,6 +100,39 @@ set_requirement([H | T], Code) :-
 
 % get_requirement([], _, _).
 % get_requirement([H | T], List, Result) :-
+printa_lista([]).
+printa_lista([H | T]) :-
+    % writeln(H),
+    atom_number(H, H),
+    printa_lista(T).
+
+get_format_requirements_in_list_alt(Requirements, Code) :-
+    % writeln(Requirements),
+    split_string(Requirements, ",", " ", Filtered),
+    % writeln(Filtered),
+    set_with_element(Filtered, Code).
+
+set_with_element([], _).
+set_with_element([H | T], Code) :-
+    % writeln(H),
+    atom_number(H, ReqNumber),
+    assertz(requirements_alt(Code, ReqNumber)),
+    set_with_element(T, Code).
+
+get_format_requirements_in_list(Requirements, Code) :-
+    atomic_list_concat(ListRequirements, ",", Requirements),
+    converter(ListRequirements, Filtered),
+    assertz(requirements(Code, Filtered)).
+    % writeln(Filtered).
+
+converter(H, Result) :-
+    converter_aux(H, [], Result).
+converter_aux([], Acc, Result) :-
+    Result = Acc.
+converter_aux([H | T], Acc, Result) :-
+    atom_number(H, L),
+    append(Acc, [L], NewAcc),
+    converter_aux(T, NewAcc, Result).
 %     append(List, [H]),
 %     Result = List,
 %     get_requirement(T, List, Result).
@@ -117,37 +151,3 @@ get_elements(Code) :-
 %     cached_iss_data(Data),
 %     walk_list(Data, H),
 %     get_informations(H, Discipline).
-
-printa_lista([]).
-printa_lista([H | T]) :-
-    % writeln(H),
-    atom_number(H, H),
-    printa_lista(T).
-
-get_format_requirements_in_list_alt(Requirements, Code) :-
-    writeln(Requirements),
-    split_string(Requirements, ",", " ", Filtered),
-    writeln(Filtered),
-    set_with_element(Filtered, Code).
-
-set_with_element([], _).
-set_with_element([H | T], Code) :-
-    writeln(H),
-    atom_number(H, ReqNumber),
-    assertz(requirements_alt(Code, ReqNumber)),
-    set_with_element(T, Code).
-
-get_format_requirements_in_list(Requirements, Code) :-
-    atomic_list_concat(ListRequirements, ",", Requirements),
-    converter(ListRequirements, Filtered),
-    assertz(requirements(Code, Filtered)),
-    writeln(Filtered).
-
-converter(H, Result) :-
-    converter_aux(H, [], Result).
-converter_aux([], Acc, Result) :-
-    Result = Acc.
-converter_aux([H | T], Acc, Result) :-
-    atom_number(H, L),
-    append(Acc, [L], NewAcc),
-    converter_aux(T, NewAcc, Result).
