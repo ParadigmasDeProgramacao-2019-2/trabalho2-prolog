@@ -90,9 +90,9 @@ get_discipline_json(Code) :-
 
 % caso nao tenha oferta o json vem vazio, salva com vazio
 get_discipline_requirements([], Code) :-
-    write('Pre-requisitos: '), writeln([]),
-    memorize(requirements([], Code)),
-    memorize(requirements_alt(0, Code)).
+    writeln('Disciplina sem oferta (nao eh possivel saber os pre requisitos)'),
+    memorize(requirements([-], Code)),
+    memorize(requirements_alt(-, Code)).
 
 % pegar os pre requisitos de cada disciplina
 get_discipline_requirements([H | _], Code) :-
@@ -162,19 +162,20 @@ main :-
 
 :- dynamic discipline/2. % Disciplinas da habilitação
 :- dynamic made_dis/1. % Disciplinas cursadas pelo usuário
+:- dynamic possible_dis_with_req/1. % Disciplinas que podem ser cursadas pelo usuário e que possuem pre requisitos
 
-% Criação de fatos em tempo de execução 
-load_facts :-
-    assertz(discipline(0,44)),
-    assertz(discipline(44,55)),
-    assertz(discipline(55,92)),
-    assertz(discipline(92, 88)),
-    assertz(discipline(88, 73)),
-    assertz(discipline(73,132)),
-    assertz(discipline(0,188)),
-    assertz(discipline(188, 82)),
-    assertz(discipline(82, 78)),
-    assertz(discipline(78, 203)).
+% % Criação de fatos em tempo de execução 
+% load_facts :-
+%     assertz(discipline(0,44)),
+%     assertz(discipline(44,55)),
+%     assertz(discipline(55,92)),
+%     assertz(discipline(92, 88)),
+%     assertz(discipline(88, 73)),
+%     assertz(discipline(73,132)),
+%     assertz(discipline(0,188)),
+%     assertz(discipline(188, 82)),
+%     assertz(discipline(82, 78)),
+%     assertz(discipline(78, 203)).
 
 % Menu principal com as funcionalidades do sistema
 menu:- nl,nl,
@@ -196,10 +197,11 @@ menu:- nl,nl,
             write('\e[2J')
         ;
             Choice == 2 ->
-            writeln("Disciplinas que você possui o pré-requisito:"),
+            writeln('Disciplinas que você possui o pré-requisito:'),
             get_possible_disc_with_req,
+            print_possible_dis_with_req,
             nl,nl,
-            writeln("Disciplinas sem pré requisito:"),
+            writeln('Disciplinas sem pré requisito:'),
             get_possible_disc
         ;
             Choice == 3 -> 
@@ -208,7 +210,7 @@ menu:- nl,nl,
             (
                 verify_discipline(Cod);
                 verify_discipline_with_req(Cod);
-                writeln("Você não possui o pré requisito para cursar a disciplina ou você já a cursou.")
+                writeln('Você não possui o pré requisito para cursar a disciplina ou você já a cursou.')
             ),
             nl
         ;
@@ -247,18 +249,37 @@ sign_new_discipline :-
     (
         search_disc(Disc) ->
             memorize(made_dis(Disc)),
+            discipline_name(Disc, Name),
             write('\e[2J'),  % clear screen
+            write('Codigo da disciplina adicionada: '), writeln(Disc),
+            write('Nome da disciplina adicionada: '), writeln(Name),
             write('Disciplina registrada com sucesso!'), nl, nl
         ;
-            write('\e[2J'),
-            write('Não foi possível registrar a disciplina!'), nl, nl
-    
+            string_chars(URL, "http://mwapi.herokuapp.com/discipline/"),
+            string_concat(URL, Disc, FINALURL),
+            iss_data(Data, FINALURL),
+            (
+                Data == [] ->
+                    write('\e[2J'),
+                    write('Não foi possível registrar a disciplina!'), nl, nl
+                ;
+                    get_discipline_data_from_json(Data),
+                    write('Disciplina registrada com sucesso!'), nl, nl
+            )
     ),
     verify_answer('Deseja cadastrar mais outra matéria? (y/n)', sign_new_discipline, sign_new_discipline).
 
+get_discipline_data_from_json([H | _]) :-
+    Code = H.get(code),
+    Name = H.get(name),
+    write('\e[2J'),  % clear screen
+    write('Codigo da disciplina adicionada: '), writeln(Code),
+    write('Nome da disciplina adicionada: '), writeln(Name),
+    atom_number(Code, CodeInt),
+    memorize(discipline_name(CodeInt, Name)).
+
 search_disc(Cod) :-
-    discipline(Cod, _);
-    discipline(_, Cod).
+    discipline_name(Cod, _).
 
 start_topsort :- 
     print_topord;
@@ -288,28 +309,64 @@ get_next(Cod):-
 
 % Pega disciplinas que o usuário pode cursar e não possuem pré requisitos
 get_possible_disc :-
-    discipline(0, Disc),
-    \+ made_dis(Disc),
-    write(Disc),
-    write(" --> "),
+    requirements([], CodDisc),
+    \+ made_dis(CodDisc),
+    discipline_name(CodDisc, NameDisc),
+    write('Codigo/Nome da disciplina: '), write(CodDisc), write(' - '), writeln(NameDisc),
     fail;
-    write("").
+    write('').
 
 % Pega disciplinas que o usuário pode cursar, pois possui seu pré requisito
 get_possible_disc_with_req :-
-    made_dis(Disc),
-    discipline(Disc, Cod),
-    \+ made_dis(Cod),
-    write(Cod),
-    write(" --> "),
+    requirements(List, CodDisc),
+    (
+        List == [] ->
+            false
+        ;
+            verify_list(List)
+
+    ),
+    \+ made_dis(CodDisc),
+    memorize(possible_dis_with_req(CodDisc)),
     fail;
-    write("").
+    write('').
+
+print_possible_dis_with_req :-
+    possible_dis_with_req(CodDisc),
+    discipline_name(CodDisc, NameDisc),
+    write('Codigo/Nome da disciplina: '), write(CodDisc), write(' - '), writeln(NameDisc),
+    forget(possible_dis_with_req(CodDisc)),
+    fail;
+    write('').
+
+% has_requirements([]) :- false.
+% has_requirements([H | T]) :-
+%     % se verify retornar true ele retorna true (ja tem), se retornar false vai pro proximo
+%     (
+%         H == [] ->
+%             has_requirements(T)
+%         ;
+%             verify_list(H) ->
+%                 true
+%             ;
+%                 has_requirements(T)
+%     ).
+
+verify_list([]).
+verify_list([H | T]) :-
+    (
+        made_dis(H) ->
+            true,
+            verify_list(T)
+        ;
+            false
+    ).
 
 % Recebe como parâmetro uma disciplina que o usuário deseja cursar e verifica se ele pode ou não cursá-la (verifica somente disciplinas sem pré requisito)
 verify_discipline(Disc) :-
     discipline(0, Disc),
     \+ made_dis(Disc),
-    writeln("Disciplina sem pré requisitos, é possível cursar.").
+    writeln('Disciplina sem pré requisitos, é possível cursar.').
 
 % Recebe como parâmetro uma disciplina que o usuário deseja cursar e verifica se ele pode ou não cursá-la (verifica somente disciplinas com pré requisito)
 verify_discipline_with_req(Disc) :-
