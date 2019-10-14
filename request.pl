@@ -8,6 +8,25 @@
 :- dynamic(discipline_name/2).
 :- dynamic(requirements/2).
 
+% Dependencias do server
+
+:- use_module(library(http/thread_httpd)).
+:- use_module(library(http/http_dispatch)).
+
+:- use_module(library(http/http_json)).
+:- use_module(library(http/json_convert)).
+:- use_module(library(http/http_cors)).
+
+:- http_handler(root(.),handle,[]).
+
+:- set_setting(http:cors, [*]).
+
+:- dynamic json_discipline/1.
+:- dynamic ord_disc/1.
+:- dynamic discipline/2.
+
+:- use_module(library(http/http_parameters)).
+
 % Remove vários fatos da base
 forget(X):-
     forgetAux(X), fail.
@@ -92,7 +111,7 @@ get_discipline_json(Code) :-
 get_discipline_requirements([], Code) :-
     writeln('Disciplina sem oferta (nao eh possivel saber os pre requisitos)'),
     memorize(requirements([-], Code)),
-    memorize(requirements_alt(-, Code)).
+    memorize(requirements_alt(0, Code)).
 
 % pegar os pre requisitos de cada disciplina
 get_discipline_requirements([H | _], Code) :-
@@ -289,8 +308,9 @@ get_next(Cod):-
     requirements_alt(Cod, Prox),
     write(Prox),
     write(" --> "),
-    assertz(requirements_alt(0, Prox)),
-    forgetAux(requirements_alt(Cod, Prox)).
+    assertz(ord_disc(Prox)),
+    assertz(requirements_alt(0, Prox)).
+    %forgetAux(requirements_alt(Cod, Prox)).
 
 % Pega disciplinas que o usuário pode cursar e não possuem pré requisitos
 get_possible_disc :-
@@ -376,3 +396,54 @@ verify_discipline_with_req(Disc) :-
     ),
     discipline_name(Disc, NameDisc),
     write('Codigo/Nome da disciplina: '), write(Disc), write(' - '), writeln(NameDisc).
+
+%----------------------------------------------------------------------------
+% server
+forget_all_disciplines :-
+    forget(requirements_alt(Pre, Cod)),
+    write(Pre),
+    write(Cod);
+    true.
+
+forget_old_topord :-
+    forget(ord_disc(Cod)),
+    write(Cod);
+    true.
+
+:- json_object
+    my_json(pre:integer, actual:integer),
+    final_json(disciplines: list),
+    topological_ord(discipline: integer).    
+
+read_jsons(Itens) :-
+    findall(JSON , transform_to_json(JSON), Itens).
+
+transform_to_json(JSON) :- 
+    requirements_alt(Pre, Cod),
+    json_convert:prolog_to_json(my_json(Pre, Cod), JSON).
+
+read_jsons_toporder(Itens) :-
+    findall(JSON , transform_to_json_top_order(JSON), Itens).
+
+transform_to_json_top_order(JSON) :- 
+    ord_disc(Cod),
+    json_convert:prolog_to_json(topological_ord(Cod), JSON).
+
+handle(Request) :-
+    cors_enable(Request,
+                [ methods([get,post,delete])
+                ]), 
+   format(user_output,"Request is: ~p~n",[Request]),
+%    http_parameters(Request,
+%                         [ habilitation(Habilitation, []) % parameter to get habilitation
+%                         ]
+%     ),
+%    format(user_output,"Habilitation is: ~p~n",[Habilitation]),
+   %start_topsort,
+   %read_jsons_toporder(Ordtop),
+   read_jsons(Disciplines),
+   json_convert:prolog_to_json(final_json( Disciplines), JSON),
+   reply_json(JSON).
+
+initialize_server :-
+    http_server(http_dispatch,[port(3333)]).

@@ -16,11 +16,13 @@ export default class DrawGraph extends Component {
         let response;
     
         try {
-          response = await axios.get('http://localhost:3333/?habilitation=123');
+          response = await axios.get('http://localhost:3333/');
         } catch(e){
-          response = await axios.get('http://localhost:3333/?habilitation=123');
+          response = await axios.get('http://localhost:3333/');
         }
       
+        console.log(response.data);
+
         this.setState({
           topological: response.data.topological,
           disciplines: response.data.disciplines
