@@ -6,6 +6,8 @@
 :- dynamic(discipline_name/2).
 :- dynamic(requirements/2).
 
+
+% Requirement format: ["requirement_code"]
 is_requirement([], _) :- fail, !.
 is_requirement([H | T], Code) :- writeln(H), 
                                 requirements(Code, H);
@@ -46,8 +48,8 @@ get_informations(H) :-
     assertz(habilitation_name(Code, Name)),
 
     % write(Disciplines),
-    writeln(Code),
-    writeln(Name),
+    % writeln(Code),
+    % writeln(Name),
     get_period(Disciplines).
 
 get_period([]).
@@ -66,7 +68,7 @@ get_code_name([H, B | _]) :-
     atom_number(H, Code),
     assertz(discipline_name(Code, B)),
     % writeln(H), % codigo
-    writeln(B),
+    % writeln(B),
     get_discipline_json(Code).
 
 get_discipline_json(Code) :-
@@ -89,7 +91,7 @@ get_discipline_requirements([], Code) :-
 
 get_discipline_requirements([H | _], Code) :-
     Requirements = H.get(requirements),
-    writeln(Code),
+    % writeln(Code),
     % writeln(Requirements),
     % writeln(Requirements),
     set_requirement(Requirements, Code).
@@ -129,10 +131,22 @@ printa_lista([H | T]) :-
     printa_lista(T).
 
 get_format_requirements_in_list(Requirements, Code) :-
-    atomic_list_concat(ListRequirements, ",", Requirements),
-    converter(ListRequirements, Filtered),
-    assertz(requirements(Code, Filtered)),
-    writeln(Filtered).
+    writeln(Requirements),
+    split_string(Requirements, ",", " ", Filtered),
+    writeln(Filtered),
+    set_with_list(Filtered, Code).
+
+set_with_list([], _).
+set_with_list([H | T], Code) :-
+    writeln(H),
+    assertz(requirements(Code, H)),
+    set_with_list(T, Code).
+
+% get_format_requirements_in_list(Requirements, Code) :-
+%     atomic_list_concat(ListRequirements, ",", Requirements),
+%     converter(ListRequirements, Filtered),
+%     assertz(requirements(Code, Filtered)),
+%     writeln(Filtered).
 
 converter(H, Result) :-
     converter_aux(H, [], Result).
