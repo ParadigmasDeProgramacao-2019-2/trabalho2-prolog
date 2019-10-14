@@ -54,13 +54,13 @@ get_period([H | T], HabilitationCode) :-
 get_discipline([], _).
 get_discipline([H | T], HabilitationCode) :-
     % write(H),
-    get_code_name(H),
-    assertz(habilitation_discipline(HabilitationCode, H)),
+    get_code_name(H, HabilitationCode),    
     get_discipline(T, HabilitationCode).
 
-get_code_name([H, B | _]) :-
+get_code_name([H, B | _], HabilitationCode) :-
     atom_number(H, Code),
     assertz(discipline_name(Code, B)),
+    assertz(habilitation_discipline(HabilitationCode, Code)),
     % writeln(H), % codigo
     % writeln(B),
     get_discipline_json(Code).
