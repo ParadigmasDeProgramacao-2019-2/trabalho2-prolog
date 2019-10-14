@@ -164,19 +164,6 @@ main :-
 :- dynamic made_dis/1. % Disciplinas cursadas pelo usuário
 :- dynamic possible_dis_with_req/1. % Disciplinas que podem ser cursadas pelo usuário e que possuem pre requisitos
 
-% % Criação de fatos em tempo de execução 
-% load_facts :-
-%     assertz(discipline(0,44)),
-%     assertz(discipline(44,55)),
-%     assertz(discipline(55,92)),
-%     assertz(discipline(92, 88)),
-%     assertz(discipline(88, 73)),
-%     assertz(discipline(73,132)),
-%     assertz(discipline(0,188)),
-%     assertz(discipline(188, 82)),
-%     assertz(discipline(82, 78)),
-%     assertz(discipline(78, 203)).
-
 % Menu principal com as funcionalidades do sistema
 menu:- nl,nl,
     sign_made_disc,
@@ -189,7 +176,6 @@ menu:- nl,nl,
     read(Choice),
     (   
         Choice == 1 ->
-            load_facts,
             write('\e[2J'),
             start_topsort,
             get0(_),
@@ -285,7 +271,7 @@ start_topsort :-
     true. 
 
  print_topord :-
-    findall(Cod, discipline(0, Cod), Values),
+    findall(Cod, requirements_alt(0, Cod), Values),
     print_list(Values),
     search_rest_req.
 
@@ -293,18 +279,18 @@ print_list([]).
 print_list([H|T]) :- write(H), write(" --> "), print_list(T).
 
 search_rest_req :-
-    discipline(0, Cod),
-    retract(discipline(0, Cod)),
+    requirements_alt(0, Cod),
+    retract(requirements_alt(0, Cod)),
     get_next(Cod),
     search_rest_req.
 
 % Define próxima disciplina do fluxo como nó ralo, para realizar ordenação topológica
 get_next(Cod):-
-    discipline(Cod, Prox),
+    requirements_alt(Cod, Prox),
     write(Prox),
     write(" --> "),
-    assertz(discipline(0, Prox)),
-    forgetAux(discipline(Cod, Prox)).
+    assertz(requirements_alt(0, Prox)),
+    forgetAux(requirements_alt(Cod, Prox)).
 
 % Pega disciplinas que o usuário pode cursar e não possuem pré requisitos
 get_possible_disc :-
