@@ -77,7 +77,16 @@ get_discipline_requirements([], Code) :-
 get_discipline_requirements([H | _], Code) :-
     Requirements = H.get(requirements),
     % TODO: VERIFICAR SE TEM PRE REQUISITO, SE NAO TIVER TEM QUE SALVAR VAZIO.
-    set_requirement(Requirements, Code).
+    (
+        Requirements == [] ->
+        save_empty_requirement(Requirements, Code)
+        ;
+        set_requirement(Requirements, Code)
+    ).
+save_empty_requirement([], Code) :-
+    write('Pre-requisitos: '), writeln([]),
+    assertz(requirements(Code, [])),
+    assertz(requirements_alt(Code, 0)).
 
 % salvar os requisitos como fatos
 set_requirement([], _).
