@@ -8,6 +8,16 @@
 :- dynamic(discipline_name/2).
 :- dynamic(requirements/2).
 
+forget(X):-
+    forgetAux(X), fail.
+forgetAux(X):-
+    retract(X).
+    
+memorize(X):-
+     forget(X), assertz(X).
+memorize(X):-
+    assertz(X).
+
 % a partir do codigo de habilitacao, montar a url e pega o json e passa para a get_habilitation que pega os dados desse json
 get_all_data_from_habilitation(Code) :-
     string_chars(URL, "http://mwapi.herokuapp.com/habilitation/"),
@@ -35,7 +45,7 @@ get_habilitation_data(H) :-
     Name = H.get(name),
     CodeStr = H.get(code),
     atom_number(CodeStr, Code),
-    assertz(habilitation_name(Code, Name)),
+    memorize(habilitation_name(Code, Name)),
     write('Codigo da habilitacao: '), writeln(Code),
     write('Nome da habilitacao: '), writeln(Name),
     get_period(Disciplines, Code).
@@ -55,8 +65,8 @@ get_discipline([H | T], HabilitationCode) :-
 % separa os atributos de codigo e nome da disciplina para salvar
 get_discipline_code_name([H, B | _], HabilitationCode) :-
     atom_number(H, Code),
-    assertz(discipline_name(Code, B)),
-    assertz(habilitation_discipline(HabilitationCode, Code)),
+    memorize(discipline_name(Code, B)),
+    memorize(habilitation_discipline(HabilitationCode, Code)),
     write('Codigo da disciplina: '), writeln(H),
     write('Nome da disciplina: '), writeln(B),
     get_discipline_json(Code).
@@ -70,23 +80,24 @@ get_discipline_json(Code) :-
 
 % caso nao tenha oferta o json vem vazio, salva com vazio
 get_discipline_requirements([], Code) :-
-    assertz(requirements(Code, [])),
-    assertz(requirements_alt(Code, [])).
+    memorize(requirements(Code, [])),
+    memorize(requirements_alt(Code, [])).
 
 % pegar os pre requisitos de cada disciplina
 get_discipline_requirements([H | _], Code) :-
     Requirements = H.get(requirements),
-    % TODO: VERIFICAR SE TEM PRE REQUISITO, SE NAO TIVER TEM QUE SALVAR VAZIO.
     (
         Requirements == [] ->
         save_empty_requirement(Requirements, Code)
         ;
         set_requirement(Requirements, Code)
     ).
+
+% salva como vazio os pre requisitos das disciplinas sem pre requisitos
 save_empty_requirement([], Code) :-
     write('Pre-requisitos: '), writeln([]),
-    assertz(requirements(Code, [])),
-    assertz(requirements_alt(Code, 0)).
+    memorize(requirements(Code, [])),
+    memorize(requirements_alt(Code, 0)).
 
 % salvar os requisitos como fatos
 set_requirement([], _).
@@ -100,7 +111,7 @@ get_format_requirements_in_list(Requirements, Code) :-
     atomic_list_concat(ListRequirements, ",", Requirements),
     converter(ListRequirements, Filtered),
     write('Pre-requisitos: '), writeln(Filtered),
-    assertz(requirements(Code, Filtered)).
+    memorize(requirements(Code, Filtered)).
 
 % formata em inteiros os pre requisitos (alternativa para ordenacao topologica)
 get_format_requirements_in_list_alt(Requirements, Code) :-
@@ -111,7 +122,7 @@ get_format_requirements_in_list_alt(Requirements, Code) :-
 set_with_element([], _).
 set_with_element([H | T], Code) :-
     atom_number(H, ReqNumber),
-    assertz(requirements_alt(Code, ReqNumber)),
+    memorize(requirements_alt(Code, ReqNumber)),
     set_with_element(T, Code).
 
 % converter elementos de string para inteiro
