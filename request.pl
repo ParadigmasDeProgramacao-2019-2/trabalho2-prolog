@@ -209,8 +209,7 @@ menu:- nl,nl,
             read(Cod),
             (
                 verify_discipline(Cod);
-                verify_discipline_with_req(Cod);
-                writeln('Você não possui o pré requisito para cursar a disciplina ou você já a cursou.')
+                verify_discipline_with_req(Cod)
             ),
             nl
         ;
@@ -339,18 +338,20 @@ print_possible_dis_with_req :-
     fail;
     write('').
 
-% has_requirements([]) :- false.
-% has_requirements([H | T]) :-
-%     % se verify retornar true ele retorna true (ja tem), se retornar false vai pro proximo
-%     (
-%         H == [] ->
-%             has_requirements(T)
-%         ;
-%             verify_list(H) ->
-%                 true
-%             ;
-%                 has_requirements(T)
-%     ).
+verify_lists(Code) :-
+    requirements(List, Code),
+    writeln(List),
+    (
+        List == [] ->
+            false
+        ;
+            (
+                verify_list(List) ->
+                    true
+                ;
+                    fail 
+            )
+    ).
 
 verify_list([]).
 verify_list([H | T]) :-
@@ -363,14 +364,29 @@ verify_list([H | T]) :-
     ).
 
 % Recebe como parâmetro uma disciplina que o usuário deseja cursar e verifica se ele pode ou não cursá-la (verifica somente disciplinas sem pré requisito)
-verify_discipline(Disc) :-
-    discipline(0, Disc),
-    \+ made_dis(Disc),
-    writeln('Disciplina sem pré requisitos, é possível cursar.').
+verify_discipline(CodDisc) :-
+    requirements([], CodDisc),
+    (
+        made_dis(CodDisc) ->
+            writeln('Você já cursou essa disciplina.')
+        ;    
+            writeln('Disciplina sem pré requisitos, é possível cursar.')
+    ),
+    discipline_name(CodDisc, NameDisc),
+    write('Codigo/Nome da disciplina: '), write(CodDisc), write(' - '), writeln(NameDisc).
 
 % Recebe como parâmetro uma disciplina que o usuário deseja cursar e verifica se ele pode ou não cursá-la (verifica somente disciplinas com pré requisito)
 verify_discipline_with_req(Disc) :-
-    \+ made_dis(Disc),
-    discipline(Cod, Disc),
-    made_dis(Cod),
-    writeln("Você possui o pré requisito para cursar a disciplina.").
+    (
+        made_dis(Disc) ->
+            writeln('Você já cursou essa disciplina.')
+        ;
+            (
+                verify_lists(Disc) ->
+                    writeln('Você possui o(s) pré requisito(s) para cursar a disciplina.')
+                ;
+                    writeln('Você não possui o(s) pré-requisito(s) para cursar a disciplina.')
+            )
+    ),
+    discipline_name(Disc, NameDisc),
+    write('Codigo/Nome da disciplina: '), write(Disc), write(' - '), writeln(NameDisc).
