@@ -7,7 +7,8 @@ export default class DrawGraph extends Component {
 
   state = {
     topological: [],
-    disciplines: []
+    disciplines: [],
+    graph: {nodes: [], edges: []},
   }
 
   async componentDidMount(){
@@ -25,24 +26,34 @@ export default class DrawGraph extends Component {
           disciplines: response.data.disciplines
         });
 
+        this.renderNodes();
+
         console.log(this.state);
   }
 
-  graph = {
-    nodes: [
-      { id: 1, label: "Node 1", color: "#e04141" },
-      { id: 2, label: "Node 2", title: "node 2 tootip text" },
-      { id: 3, label: "Node 3", title: "node 3 tootip text" },
-      { id: 4, label: "Node 4", title: "node 4 tootip text" },
-      { id: 5, label: "Node 5", title: "node 5 tootip text" }
-    ],
-    edges: [
-      { from: 1, to: 2 },
-      { from: 1, to: 3 },
-      { from: 2, to: 4 },
-      { from: 2, to: 5 }
-    ]
-  };
+  renderNodes = () => {
+    let aux_vector = [];
+    let nodes = [];
+    let edges = [];
+
+    this.state.disciplines.forEach(item => {
+        if(aux_vector.indexOf(item.pre) === -1){
+          aux_vector.push(item.pre); 
+          nodes.push({ id: item.pre , label: `${item.pre}`});
+        }
+
+        if(aux_vector.indexOf(item.actual) === -1){
+          aux_vector.push(item.actual); 
+          nodes.push({ id: item.actual , label: `${item.actual}`});
+        }
+
+        edges.push({from: item.pre, to: item.actual});
+    });
+
+    console.log(nodes);
+
+    this.setState({...this.state, graph: {nodes, edges}});
+  }
  
   options = {
     layout: {
@@ -51,7 +62,11 @@ export default class DrawGraph extends Component {
     edges: {
       color: "#000000"
     },
-    height: "800px"
+    height: "800px",
+    physics: {
+      enabled: true
+    },
+    interaction: { multiselect: true, dragView: true }
   };
  
   events = {
@@ -61,9 +76,12 @@ export default class DrawGraph extends Component {
   };
 
   render(){
+
+    console.log(this.graph);
+
     return (
       <Graph
-        graph={this.graph}
+        graph={this.state.graph}
         options={this.options}
         events={this.events}
         getNetwork={network => {//  if you want access to vis.js network api you can set the state in a parent component using this property

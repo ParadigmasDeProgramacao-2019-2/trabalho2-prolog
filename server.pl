@@ -43,9 +43,6 @@ forget_old_topord :-
     final_json(topological: list, disciplines: list),
     topological_ord(discipline: integer).    
 
-server(Port) :-
-   http_server(http_dispatch,[port(Port)]).
-
 read_jsons(Itens) :-
     findall(JSON , transform_to_json(JSON), Itens).
 
@@ -64,8 +61,6 @@ handle(Request) :-
     cors_enable(Request,
                 [ methods([get,post,delete])
                 ]), 
-    % http_read_json(Request, DictIn,json_object(term)),
-    % write(DictIn),
    format(user_output,"Request is: ~p~n",[Request]),
    http_parameters(Request,
                         [ habilitation(Habilitation, []) % parameter to get habilitation
@@ -79,12 +74,8 @@ handle(Request) :-
    json_convert:prolog_to_json(final_json(Ordtop, Disciplines), JSON),
    reply_json(JSON).
 
-% handle(Request) :-
-%     cors_enable(Request,
-%                 [ methods([get,post,delete])
-%                 ]),
-%     format(user_output,"Request is: ~p~n",[Request]),
-%     reply_json(test{x: 1, y: 2}). 
+initialize_server :-
+    http_server(http_dispatch,[port(3333)]).
 
 % Topological order
 
