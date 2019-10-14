@@ -6,13 +6,6 @@
 :- dynamic(discipline_name/2).
 :- dynamic(requirements/2).
 
-
-% Requirement format: ["requirement_code"]
-is_requirement([], _) :- fail, !.
-is_requirement([H | T], Code) :- writeln(H), 
-                                requirements(Code, H);
-                               is_requirement(T, Code), !.
-
 % :- dynamic(known/2).
 
 %! iss_data(-Data) is det.
@@ -101,6 +94,7 @@ set_requirement([H | T], Code) :-
     % assertz(requirements(Code, [H])),
     % writeln([H]),
     get_format_requirements_in_list(H, Code),
+    get_format_requirements_in_list_alt(H, Code),
     set_requirement(T, Code).
 
 % get_requirement([], _, _).
@@ -130,23 +124,24 @@ printa_lista([H | T]) :-
     atom_number(H, H),
     printa_lista(T).
 
-get_format_requirements_in_list(Requirements, Code) :-
+get_format_requirements_in_list_alt(Requirements, Code) :-
     writeln(Requirements),
     split_string(Requirements, ",", " ", Filtered),
     writeln(Filtered),
-    set_with_list(Filtered, Code).
+    set_with_element(Filtered, Code).
 
-set_with_list([], _).
-set_with_list([H | T], Code) :-
+set_with_element([], _).
+set_with_element([H | T], Code) :-
     writeln(H),
-    assertz(requirements(Code, H)),
-    set_with_list(T, Code).
+    atom_number(H, ReqNumber),
+    assertz(requirements_alt(Code, ReqNumber)),
+    set_with_element(T, Code).
 
-% get_format_requirements_in_list(Requirements, Code) :-
-%     atomic_list_concat(ListRequirements, ",", Requirements),
-%     converter(ListRequirements, Filtered),
-%     assertz(requirements(Code, Filtered)),
-%     writeln(Filtered).
+get_format_requirements_in_list(Requirements, Code) :-
+    atomic_list_concat(ListRequirements, ",", Requirements),
+    converter(ListRequirements, Filtered),
+    assertz(requirements(Code, Filtered)),
+    writeln(Filtered).
 
 converter(H, Result) :-
     converter_aux(H, [], Result).
