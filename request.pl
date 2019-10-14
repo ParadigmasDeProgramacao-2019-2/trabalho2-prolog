@@ -3,13 +3,19 @@
 :- use_module(library(lists)).
 
 :- dynamic(habilitation_name/2).
+:- dynamic(habilitation_discipline/2).
+:- dynamic(requirements_alt/2).
 :- dynamic(discipline_name/2).
 :- dynamic(requirements/2).
 
-% :- dynamic(known/2).
+% a partir do codigo de habilitacao, montar a url e pega o json e passa para a get_habilitation que pega os dados desse json
+get_all_data_from_habilitation(Code) :-
+    string_chars(URL, "http://mwapi.herokuapp.com/habilitation/"),
+    string_concat(URL, Code, FINALURL),
+    iss_data(Data, FINALURL),
+    get_habilitations(Data).
 
-%! iss_data(-Data) is det.
-%  get JSON ISS location data from open notify api and read in as dict
+% pega o JSON da API e retorna um dicionario
 iss_data(Data, URL) :-
     setup_call_cleanup(
         http_open(URL, In, [request_header('Accept'='application/json')]),
@@ -17,114 +23,89 @@ iss_data(Data, URL) :-
         close(In)
     ).
 
-% cached_iss_data(Data, URL) :-
-%     known(data, Data) ;
-%     iss_data(Data, URL),
-%     assert(known(data, Data)).
+% acesso ao elemento habilitation dentro do array
+get_habilitations([]).
+get_habilitations([H | T]) :-
+    get_habilitation_data(H),
+    get_habilitations(T).
 
-% walk_list([], _ ).
-% walk_list([H | T], H) :- walk_list([], T).
-
-get_habilitation([]).
-get_habilitation([H | T]) :-
-    get_informations(H),
-    get_habilitation(T).
-
-% get_habilitation([H | _]) :-
-%     get_informations(H).
-
-get_informations(H) :-
+% pega os dados de uma habilitacao a partir do json dela
+get_habilitation_data(H) :-
     Disciplines = H.get(disciplines),
     Name = H.get(name),
     CodeStr = H.get(code),
     atom_number(CodeStr, Code),
     assertz(habilitation_name(Code, Name)),
-
-    % write(Disciplines),
-    % writeln(Code),
-    % writeln(Name),
+    write('Codigo da habilitacao: '), writeln(Code),
+    write('Nome da habilitacao: '), writeln(Name),
     get_period(Disciplines, Code).
 
+% pega cada elemento do array de habilitacao, cada elemento eh um periodo
 get_period([], _).
 get_period([H | T], HabilitationCode) :-
-    % write(H),
     get_discipline(H, HabilitationCode),
     get_period(T, HabilitationCode).
 
+% pega cada disciplina do periodo
 get_discipline([], _).
 get_discipline([H | T], HabilitationCode) :-
-    % write(H),
-    get_code_name(H, HabilitationCode),    
+    get_discipline_code_name(H, HabilitationCode),    
     get_discipline(T, HabilitationCode).
 
-get_code_name([H, B | _], HabilitationCode) :-
+% separa os atributos de codigo e nome da disciplina para salvar
+get_discipline_code_name([H, B | _], HabilitationCode) :-
     atom_number(H, Code),
     assertz(discipline_name(Code, B)),
     assertz(habilitation_discipline(HabilitationCode, Code)),
-    % writeln(H), % codigo
-    % writeln(B),
+    write('Codigo da disciplina: '), writeln(H),
+    write('Nome da disciplina: '), writeln(B),
     get_discipline_json(Code).
 
+% acesso a api para pegar o json com os dados da disciplina para pegar os pre requisitos
 get_discipline_json(Code) :-
     string_chars(URL, "http://mwapi.herokuapp.com/discipline/"),
     string_concat(URL, Code, FINALURL),
-    % writeln(FINALURL),
-    % cached_iss_data(Data, FINALURL),
     iss_data(Data, FINALURL),
     get_discipline_requirements(Data, Code).
-    % iss_data(Data, FINALURL),
-    % write(Data).
-    
-% get_discipline_data(Data, Code) :-
-%     get_discipline_requirements(Data, Code).
-%     % Requirements = Data.get(requirements),
-%     % get_requirement(Requirements).
 
+% caso nao tenha oferta o json vem vazio, salva com vazio
 get_discipline_requirements([], Code) :-
-    assertz(requirements(Code, [])).
+    assertz(requirements(Code, [])),
+    assertz(requirements_alt(Code, [])).
 
+% pegar os pre requisitos de cada disciplina
 get_discipline_requirements([H | _], Code) :-
     Requirements = H.get(requirements),
-    % writeln(Code),
-    % writeln(Requirements),
-    % writeln(Requirements),
+    % TODO: VERIFICAR SE TEM PRE REQUISITO, SE NAO TIVER TEM QUE SALVAR VAZIO.
     set_requirement(Requirements, Code).
 
+% salvar os requisitos como fatos
 set_requirement([], _).
 set_requirement([H | T], Code) :-
-    % assertz(requirements(Code, [H])),
-    % writeln([H]),
     get_format_requirements_in_list(H, Code),
     get_format_requirements_in_list_alt(H, Code),
     set_requirement(T, Code).
 
-% get_requirement([], _, _).
-% get_requirement([H | T], List, Result) :-
-printa_lista([]).
-printa_lista([H | T]) :-
-    % writeln(H),
-    atom_number(H, H),
-    printa_lista(T).
+% formata em forma de lista de inteiros os pre requisitos
+get_format_requirements_in_list(Requirements, Code) :-
+    atomic_list_concat(ListRequirements, ",", Requirements),
+    converter(ListRequirements, Filtered),
+    write('Pre-requisitos: '), writeln(Filtered),
+    assertz(requirements(Code, Filtered)).
 
+% formata em inteiros os pre requisitos (alternativa para ordenacao topologica)
 get_format_requirements_in_list_alt(Requirements, Code) :-
-    % writeln(Requirements),
     split_string(Requirements, ",", " ", Filtered),
-    % writeln(Filtered),
     set_with_element(Filtered, Code).
 
+% separar os elementos e salvar (alternativa para ordenacao topologica)
 set_with_element([], _).
 set_with_element([H | T], Code) :-
-    % writeln(H),
     atom_number(H, ReqNumber),
     assertz(requirements_alt(Code, ReqNumber)),
     set_with_element(T, Code).
 
-get_format_requirements_in_list(Requirements, Code) :-
-    atomic_list_concat(ListRequirements, ",", Requirements),
-    converter(ListRequirements, Filtered),
-    assertz(requirements(Code, Filtered)).
-    % writeln(Filtered).
-
+% converter elementos de string para inteiro
 converter(H, Result) :-
     converter_aux(H, [], Result).
 converter_aux([], Acc, Result) :-
@@ -133,21 +114,9 @@ converter_aux([H | T], Acc, Result) :-
     atom_number(H, L),
     append(Acc, [L], NewAcc),
     converter_aux(T, NewAcc, Result).
-%     append(List, [H]),
-%     Result = List,
-%     get_requirement(T, List, Result).
-    
-% :- dynamic get_elements/2.
 
-get_elements(Code) :-
-    % cached_iss_data(Data, "http://mwapi.herokuapp.com/habilitations"),
-    % iss_data(Data, "http://mwapi.herokuapp.com/habilitations"),
-    string_chars(URL, "http://mwapi.herokuapp.com/habilitation/"),
-    string_concat(URL, Code, FINALURL),
-    iss_data(Data, FINALURL),
-    get_habilitation(Data).
-
-% get_elements(H, Discipline) :- 
-%     cached_iss_data(Data),
-%     walk_list(Data, H),
-%     get_informations(H, Discipline).
+% para imprimir uma lista
+printa_lista([]).
+printa_lista([H | T]) :-
+    writeln(H),
+    printa_lista(T).
