@@ -24,7 +24,7 @@ Para executar o programa, vá até a pasta raiz do programa e rode o seguinte co
 
 Para compilar o código fonte, rode o executavel com: 
 
-> * ```[MWConsulta]. ```
+> * ```[mwconsulta]. ```
 
 E chame a regra main: 
 
